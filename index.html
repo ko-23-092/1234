@@ -76,29 +76,46 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Обработка отправки формы
-        document.getElementById("feedbackForm").addEventListener("submit", async (e) => {
-            e.preventDefault();
+        window.processLike = async (id) => {
+            const docRef = doc(db, "requests", id);
+            try {
+                await updateDoc(docRef, { likes: increment(1) });
+            } catch (e) { console.error("Validation Error:", e.message); }
+        };
 
-            const nameInput = document.getElementById("userName").value;
-            const emailInput = document.getElementById("userEmail").value;
-
+        // МЕТОД: ЗАПИСЬ С ВАЛИДАЦИЕЙ
+        document.getElementById('mainBtn').onclick = async () => {
+            const btn = document.getElementById('mainBtn');
+            btn.disabled = true;
             try {
                 await addDoc(collection(db, "requests"), {
-                    name: nameInput,
-                    email: emailInput,
-                    timestamp: new Date()
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value,
+                    likes: 0,
+                    timestamp: serverTimestamp()
                 });
+                document.getElementById('email').value = "";
+            } catch (e) { alert("Ошибка безопасности: Данные отклонены сервером."); }
+            btn.disabled = false;
+        };
 
-                alert("Готово! Данные сохранены в Firebase.");
-                document.getElementById("feedbackForm").reset();
-
-            } catch (error) {
-                console.error("Ошибка записи:", error);
-                alert("Ошибка при отправке.");
-            }
+        // МЕТОД: REAL-TIME СИНХРОНИЗАЦИЯ
+        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
+        onSnapshot(q, (snapshot) => {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = "";
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                feed.innerHTML += `
+                    <div class="post">
+                        <span class="time">${data.timestamp?.toDate().toLocaleString() || '...'}</span>
+                        <b>${data.name}</b>
+                        <p style="margin: 5px 0;">${data.email}</p>
+                        <button class="like-btn" onclick="processLike('${doc.id}')">👍 ${data.likes || 0}</button>
+                    </div>
+                `;
+            });
         });
     </script>
-
 </body>
 </html>
