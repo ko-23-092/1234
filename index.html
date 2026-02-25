@@ -50,14 +50,16 @@
         window.processLike = async (id) => {
             const docRef = doc(db, "requests", id);
             try {
-                // Если поле likes в базе отсутствует, updateDoc выдаст ошибку
-                await updateDoc(docRef, { likes: increment(1) });
-            } catch (e) { 
-                console.warn("Поле likes отсутствовало, инициализируем его...");
-                // Если поля нет, создаем его со значением 1
-                await updateDoc(docRef, { likes: 1 });
-            }
-        };
+        // Пробуем обновить существующее поле
+        await updateDoc(docRef, { 
+            likes: increment(1) 
+        });
+        } catch (e) { 
+        // Если поля likes не было, создаем его со значением 1
+        console.warn("Поле отсутствовало, инициализируем...");
+        await updateDoc(docRef, { likes: 1 });
+    }
+};
 
         // МЕТОД: ЗАПИСЬ С ВАЛИДАЦИЕЙ
         document.getElementById('mainBtn').onclick = async () => {
