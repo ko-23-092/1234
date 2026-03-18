@@ -1,84 +1,50 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>BaaS</title>
-    <style>
-        body { font-family: 'Inter', sans-serif; background: #f4f7f6; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        button#mainBtn { background: #007bff; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: 600; cursor: pointer; transition: 0.3s; }
-        button#mainBtn:hover { background: #0056b3; }
-        
-        /* Стили для списка пользователей */
-        #groupList { width: 100%; max-width: 500px; }
-        .user-item { background: #fff; border: 1px solid #eaeaea; padding: 15px; margin-top: 10px; border-radius: 8px; display: flex; align-items: center; }
-        .status-dot { width: 12px; height: 12px; border-radius: 50%; margin-right: 15px; flex-shrink: 0; }
-        #myInfo { margin-bottom: 10px; font-weight: bold; color: #333; }
-    </style>
-</head>
-<body>
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    <div class="container">
-        <h3>Панель управления данными</h3>
-        <div id="myInfo">Загрузка профиля...</div>
-        <input type="text" id="statusInput" placeholder="Новый статус (вместо Имя профиля)">
-        <input type="text" id="colorInput" placeholder="Цвет (например, red или #00ff00)">
-        <button id="mainBtn">Опубликовать в облако</button>
-    </div>
+  const URL = 'https://ljablscverohxdjafwgf.supabase.co';
+  const KEY = 'sb_publishable_4KEKgjFs9X26qHdZAJtYRw_dsR8Lnhf';
+  const supabase = createClient(URL, KEY);
 
-    <div id="groupList"></div>
+  const MY_ID = '70b10d53-92d3-4b2e-b968-28c81aaa72a7';
 
-    <script type="module">
-        
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+  window.changeStatus = async (text, color) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ status: text, color: color })
+      .eq('id', MY_ID);
 
-    const URL = 'https://rncerhgizyjhovbdpqnl.supabase.co';
-    const KEY = 'sb_publishable_ThtftS6uBeaKf8FyndIFTg_OOHMJ5yh';
-    const supabase = createClient(URL, KEY);
-
-    const MY_ID = '70b10d53-92d3-4b2e-b968-28c81aaa72a7';
-
-    window.changeStatus = async (text, color) => {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ status: text, color: color })
-          .eq('id', MY_ID);
-
-        if (error) {
-          alert("Ошибка! Проверьте RLS политики в Supabase.");
-          console.error(error);
-        } else {
-          fetchGroup();
-        }
+    if (error) {
+      alert("Ошибка! Проверьте RLS политики в Supabase.");
+      console.error(error);
+    } else {
+      fetchGroup();
+    }
   };
 
-    async function fetchGroup() {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('username', { ascending: true });
+  async function fetchGroup() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('username', { ascending: true });
 
-        if (error) return console.error(error);
+    if (error) return console.error(error);
 
-        const list = document.getElementById('groupList');
-        list.innerHTML = data.map(user => `
-          <div class="user-item">
-            <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-            <div style="flex-grow: 1;">
-              <strong>${user.username}</strong><br>
-              <small style="color: #666;">${user.status || 'Статус не задан'}</small>
-            </div>
-          </div>
-        `).join('');
+    const list = document.getElementById('groupList');
+    list.innerHTML = data.map(user => `
+      <div class="user-item">
+        <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
+        <div style="flex-grow: 1;">
+          <strong>${user.username}</strong><br>
+          <small style="color: #666;">${user.status || 'Статус не задан'}</small>
+        </div>
+      </div>
+    `).join('');
 
-        const me = data.find(u => u.id === MY_ID);
-        if (me) document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
-      }
+    const me = data.find(u => u.id === MY_ID);
+    if (me) document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
+  }
 
   fetchGroup();
 
   setInterval(fetchGroup, 5000);
-    </script>
-</body>
-</html>
+</script>
