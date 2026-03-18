@@ -26,83 +26,54 @@
     <div id="feed" style="width: 100%; max-width: 500px;"></div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js";
-        import {
-            getFirestore, collection, addDoc, query, orderBy, onSnapshot,
-            serverTimestamp, updateDoc, doc, increment, setDoc
-        } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-        // Конфигурация Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyA2XD09sqd3K04IlOyMnQ-kJ1cfqdwlSR0",
-            authDomain: "project-83164948882583154.firebaseapp.com",
-            projectId: "project-83164948882583154",
-            storageBucket: "project-83164948882583154.firebasestorage.app",
-            messagingSenderId: "304155675736",
-            appId: "1:304155675736:web:05c7ca95bac12b0285ce2d",
-            measurementId: "G-QK159S4Z50"
-        };
+  const URL = 'https://rncerhgizyjhovbdpqnl.supabase.co';
+  const KEY = 'sb_publishable_ThtftS6uBeaKf8FyndIFTg_OOHMJ5yh';
+  const supabase = createClient(URL, KEY);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+  const MY_ID = '4bc5694e-89f8-47d9-9b60-2d3bd2439122';
 
-        // МЕТОД: АТОМАРНОЕ ОБНОВЛЕНИЕ (LIKES)
-        window.processLike = async (id) => {
-            const docRef = doc(db, "requests", id);
-            try {
-        // Пробуем обновить существующее поле
-        await updateDoc(docRef, { 
-            likes: increment(1) 
-        });
-        } catch (e) { 
-        // Если поля likes не было, создаем его со значением 1
-        console.warn("Поле отсутствовало, инициализируем...");
-        await updateDoc(docRef, { likes: 1 });
+  window.changeStatus = async (text, color) => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ status: text, color: color })
+      .eq('id', MY_ID);
+
+    if (error) {
+      alert("Ошибка! Проверьте RLS политики в Supabase.");
+      console.error(error);
+    } else {
+      fetchGroup();
     }
-};
+  };
 
-        // МЕТОД: ЗАПИСЬ С ВАЛИДАЦИЕЙ
-        document.getElementById('mainBtn').onclick = async () => {
-            const btn = document.getElementById('mainBtn');
-            const nameInput = document.getElementById('name');
-            const emailInput = document.getElementById('email');
+  async function fetchGroup() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('username', { ascending: true });
 
-            if(!nameInput.value || !emailInput.value) return alert("Заполните поля");
+    if (error) return console.error(error);
 
-            btn.disabled = true;
-            try {
-                await addDoc(collection(db, "requests"), {
-                    name: nameInput.value,
-                    email: emailInput.value,
-                    likes: 0,
-                    timestamp: serverTimestamp()
-                });
-                // Очистка полей после успешной отправки
-                nameInput.value = "";
-                emailInput.value = "";
-            } catch (e) { 
-                alert("Ошибка безопасности: Данные отклонены сервером."); 
-            }
-            btn.disabled = false;
-        };
+    const list = document.getElementById('groupList');
+    list.innerHTML = data.map(user => `
+      <div class="user-item">
+        <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
+        <div style="flex-grow: 1;">
+          <strong>${user.username}</strong><br>
+          <small style="color: #666;">${user.status || 'Статус не задан'}</small>
+        </div>
+      </div>
+    `).join('');
 
-        // МЕТОД: REAL-TIME СИНХРОНИЗАЦИЯ
-        const q = query(collection(db, "requests"), orderBy("timestamp", "desc"));
-        onSnapshot(q, (snapshot) => {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = "";
-            snapshot.forEach((doc) => {
-                const data = doc.data();
-                feed.innerHTML += `
-                    <div class="post">
-                        <span class="time">${data.timestamp?.toDate().toLocaleString() || '...'}</span>
-                        <b>${data.name}</b>
-                        <p style="margin: 5px 0;">${data.email}</p>
-                        <button class="like-btn" onclick="processLike('${doc.id}')">👍 ${data.likes || 0}</button>
-                    </div>
-                `;
-            });
-        });
+    const me = data.find(u => u.id === MY_ID);
+    if (me) document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
+  }
+
+  fetchGroup();
+
+  setInterval(fetchGroup, 5000);
     </script>
 </body>
 </html>
