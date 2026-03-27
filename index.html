@@ -52,8 +52,14 @@
 
     let currentUser = null;
 
+    // ОБНОВЛЕННАЯ ФУНКЦИЯ ВХОДА
     window.loginWithGoogle = async () => {
-      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      const { error } = await supabase.auth.signInWithOAuth({ 
+        provider: 'google',
+        options: {
+          redirectTo: 'https://ko-23-092.github.io/1234/'
+        }
+      });
       if (error) console.error("Ошибка входа:", error);
     };
 
