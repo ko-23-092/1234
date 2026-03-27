@@ -15,14 +15,23 @@
     .timer-display { display: flex; align-items: center; gap: 10px; font-size: 32px; font-weight: bold; color: #4285F4; margin-bottom: 30px; }
     .timer-icon { font-size: 40px; color: #555; }
 
-    .personal-buttons { display: flex; flex-direction: column; gap: 15px; width: 100%; }
-    .full-width-btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 16px; }
-    .btn-end { background: #dc3545; } 
+    .personal-buttons { display: flex; flex-direction: column; width: 100%; }
     
-    .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
-    .grid-buttons button { padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s; font-size: 16px; }
-    .btn-break { background: #ffc107; color: black; } 
-    .btn-exit { background: #6c757d; } 
+    /* Новые стили кнопок статусов */
+    .btn-logout { background: #dc3545; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 16px; transition: 0.2s; }
+    .btn-logout:hover { background: #c82333; }
+    
+    .grid-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; }
+    .grid-buttons button { padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 14px; display: flex; justify-content: center; align-items: center; gap: 5px; }
+    
+    .btn-study { background: #28a745; color: white; }
+    .btn-study:hover { background: #218838; }
+    .btn-coffee { background: #ffc107; color: black; }
+    .btn-coffee:hover { background: #e0a800; }
+    .btn-game { background: #17a2b8; color: white; }
+    .btn-game:hover { background: #138496; }
+    .btn-home { background: #6c757d; color: white; }
+    .btn-home:hover { background: #5a6268; }
 
     .btn-login-google { background: #4285F4; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; width: 100%; font-size: 16px; margin-top: 20px; }
 
@@ -73,10 +82,12 @@
       </div>
       
       <div class="personal-buttons">
-        <button class="full-width-btn btn-end" onclick="changeStatus('Completed', '#dc3545')">⛔ Завершить сессию</button>
+        <button class="btn-logout" onclick="logout()">Выйти</button>
         <div class="grid-buttons">
-          <button class="btn-break" onclick="changeStatus('Кофе-брейк', '#ffc107')">☕ Перерыв</button>
-          <button class="btn-exit" onclick="logout()">Выход</button>
+          <button class="btn-study" onclick="changeStatus('Учусь', '#28a745')">📚 Учусь</button>
+          <button class="btn-coffee" onclick="changeStatus('Кофе', '#ffc107')">☕ Кофе</button>
+          <button class="btn-game" onclick="changeStatus('В игре', '#17a2b8')">🎮 В игре</button>
+          <button class="btn-home" onclick="changeStatus('Дома', '#6c757d')">🏠 Дома</button>
         </div>
       </div>
     </div>
@@ -132,7 +143,7 @@
         currentUser = session.user;
         document.getElementById('authSection').style.display = 'none';
         document.getElementById('personalStatus').style.display = 'flex';
-        document.getElementById('myGreeting').innerText = currentUser.user_metadata.full_name;
+        document.getElementById('myGreeting').innerText = "Вы зашли как: " + currentUser.user_metadata.full_name;
         
         updatePresence(); 
         setInterval(updatePresence, 10000);
@@ -161,7 +172,9 @@
       
       if (data) {
         let newStudyTime = data.study_time || 0;
-        if (data.status !== 'Кофе-брейк' && data.status !== 'Completed') {
+        
+        // Время учебы прибавляется только если статус "Учусь" или статуса еще нет
+        if (data.status === 'Учусь' || !data.status) {
           newStudyTime += 10;
         }
 
@@ -196,10 +209,11 @@
         const secs = totalSeconds % 60;
         const timeBadgeHtml = '<span class="time-badge">⏳ ' + hours + 'ч ' + mins + 'м ' + secs + 'с</span>';
 
+        // Иконки под твои новые статусы
         let statusIconText = '<span class="status-text-icon">📚 Учусь</span>';
-        if (user.color === '#ffc107') statusIconText = '<span class="status-text-icon">☕ Перерыв</span>';
-        else if (user.color === '#dc3545') statusIconText = '<span class="status-text-icon">⛔ Завершен</span>';
-        else if (user.color === '#6c757d') statusIconText = '<span class="status-text-icon">🏠 Дома</span>';
+        if (user.status === 'Кофе') statusIconText = '<span class="status-text-icon">☕ Кофе</span>';
+        else if (user.status === 'В игре') statusIconText = '<span class="status-text-icon">🎮 В игре</span>';
+        else if (user.status === 'Дома') statusIconText = '<span class="status-text-icon">🏠 Дома</span>';
 
         const onlineStatus = isOnline ? timeBadgeHtml : '<span class="offline-text">○ Офлайн</span>';
 
