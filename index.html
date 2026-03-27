@@ -106,7 +106,6 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // === ВСТАВЛЯЙ КЛЮЧ ОЧЕНЬ АККУРАТНО, В ОДНУ СТРОКУ, МЕЖДУ ОДИНАРНЫМИ КАВЫЧКАМИ ===
     const URL = 'https://ezvtszaefsxrlaodcdkh.supabase.co';
     const KEY = 'sb_publishable_c_xE3Q1xrn1C8mT8pN0a-Q_HS1k-BNN'; 
     const supabase = createClient(URL, KEY);
@@ -204,7 +203,15 @@
 
         const onlineStatus = isOnline ? timeBadgeHtml : '<span class="offline-text">○ Офлайн</span>';
 
-        html += '<div class="user-item">' + '<div class="status-and-name">' + '<div class="status-dot" style="background: ' + dotColor + ';"></div>' + '<span class="user-name">' + user.username + '</span>' + '</div>' + '<div class="status-details">' + statusIconText + onlineStatus + '</div>' + '</div>';
+        html += '<div class="user-item">' +
+                  '<div class="status-and-name">' +
+                    '<div class="status-dot" style="background: ' + dotColor + ';"></div>' +
+                    '<span class="user-name">' + user.username + '</span>' +
+                  '</div>' +
+                  '<div class="status-details">' +
+                    statusIconText + onlineStatus +
+                  '</div>' +
+                '</div>';
       });
       list.innerHTML = html;
     }
@@ -250,7 +257,10 @@
       const isOwnMessage = msg.user_id === currentUser.id;
       const messageClass = isOwnMessage ? 'message-item own-message' : 'message-item';
       
-      const msgHtml = '<div class="' + messageClass + '">' + '<span class="message-user">' + msg.username + '</span>' + '<p class="message-content">' + msg.message + '</p>' + '</div>';
+      const msgHtml = '<div class="' + messageClass + '">' +
+                        '<span class="message-user">' + msg.username + '</span>' +
+                        '<p class="message-content">' + msg.message + '</p>' +
+                      '</div>';
       
       chatContainer.insertAdjacentHTML('beforeend', msgHtml);
       if (scroll) scrollToBottom();
