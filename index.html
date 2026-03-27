@@ -2,68 +2,181 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Монитор статусов</title>
+  <title>Монитор статусов группы</title>
   <style>
     body { font-family: sans-serif; background: #eef2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-    .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); width: 450px; margin-bottom: 20px; }
-    .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
-    button { padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s;}
-    button:hover { opacity: 0.8; }
     
-    .btn-study { background: #28a745; }
-    .btn-coffee { background: #ffc107; color: black; }
-    .btn-game { background: #17a2b8; }
-    .btn-home { background: #6c757d; }
-    .btn-google { background: #4285F4; margin-bottom: 10px; width: 100%; }
-    .btn-logout { background: #dc3545; margin-bottom: 10px; width: 100%; display: none; }
+    .main-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 480px;
+    }
+
+    .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
     
-    .user-item { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-    .user-item:last-child { border-bottom: none; }
+    /* Top Section (Personal Status) */
+    .personal-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .user-greeting { font-weight: bold; font-size: 20px; margin-bottom: 20px; }
+    .timer-display { display: flex; align-items: center; gap: 10px; font-size: 32px; font-weight: bold; color: #4285F4; margin-bottom: 30px; }
+    .timer-icon { font-size: 40px; color: #555; }
+
+    .personal-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      width: 100%;
+    }
     
+    .personal-buttons .full-width-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      transition: 0.2s;
+      font-size: 16px;
+    }
+    
+    .personal-buttons .btn-end { background: #dc3545; } /* Red for End Session */
+    
+    .grid-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      width: 100%;
+    }
+    .grid-buttons button {
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      transition: 0.2s;
+      font-size: 16px;
+    }
+    .btn-break { background: #ffc107; color: black; } /* Amber for Break */
+    .btn-exit { background: #6c757d; } /* Grey for Exit */
+
+    .btn-login-google {
+      background: #4285F4;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      color: white;
+      width: 100%;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    /* Middle Section (Group Monitor) */
+    .group-monitor-card {}
+    .section-header { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; color: #333; margin-bottom: 20px; text-align: center; justify-content: center; }
+    .section-icon { font-size: 24px; color: #555; }
+    
+    .grouplist { display: flex; flex-direction: column; gap: 15px; }
+    .user-item { display: flex; align-items: center; padding: 10px; background: #fafafa; border-radius: 8px; justify-content: space-between; position: relative; }
+    .status-and-name { display: flex; align-items: center; gap: 12px; }
     .status-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
-    .user-info { flex-grow: 1; }
+    .user-name { font-weight: bold; font-size: 16px; }
     
-    .meta-info { display: flex; gap: 15px; font-size: 12px; margin-top: 5px; }
-    .badge-online { color: #28a745; font-weight: bold; }
-    .badge-offline { color: #999; }
-    .badge-time { color: #555; background: #f0f0f0; padding: 2px 6px; border-radius: 4px; }
+    .status-details { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
+    .status-text-icon { display: flex; align-items: center; gap: 5px; color: #666; font-size: 14px; }
+    .time-badge { color: #4285F4; font-size: 12px; display: flex; align-items: center; gap: 3px; margin-top: 3px; }
+    .offline-text { color: #999; font-size: 12px; margin-top: 3px; }
+
+    /* Bottom Section (Chat) */
+    .chat-card { display: flex; flex-direction: column; flex-grow: 1; padding: 25px; }
+    .chat-messages { flex-grow: 1; overflow-y: auto; background: #fcfcfc; border: 1px solid #eee; border-radius: 8px; padding: 15px; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; min-height: 150px; font-size: 14px; }
+    .message-item { line-height: 1.4; }
+    .message-user { font-weight: bold; color: #333; }
+    .message-content { color: #555; }
+
+    .chat-input-group { display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; padding-top: 15px; }
+    .chat-input { flex-grow: 1; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; outline: none; }
+    .chat-input:focus { border-color: #4285F4; }
+    .btn-send { background: #28a745; color: white; border: none; border-radius: 8px; width: 45px; height: 45px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .btn-send:hover { opacity: 0.8; }
+    .send-icon { color: white; }
+
   </style>
 </head>
 <body>
 
-  <div class="card">
-    <h3>Мой профиль</h3>
-    <p id="myInfo">Пожалуйста, войдите в аккаунт</p>
-    
-    <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()">🌐 Войти через Google</button>
-    <button id="logoutBtn" class="btn-logout" onclick="logout()">Выйти</button>
-
-    <div class="buttons" id="statusButtons" style="display: none;">
-      <button class="btn-study" onclick="changeStatus('Учусь', '#28a745')">📚 Учусь</button>
-      <button class="btn-coffee" onclick="changeStatus('Кофе-брейк', '#ffc107')">☕ Кофе</button>
-      <button class="btn-game" onclick="changeStatus('В игре', '#17a2b8')">🎮 В игре</button>
-      <button class="btn-home" onclick="changeStatus('Дома', '#6c757d')">🏠 Дома</button>
+  <div class="main-container">
+    <div id="authSection" class="card personal-card" style="display: none;">
+      <h2 class="user-greeting">Пожалуйста, войдите в аккаунт</h2>
+      <button class="btn-login-google" onclick="loginWithGoogle()">🌐 Войти через Google</button>
     </div>
-  </div>
 
-  <div class="card">
-    <h3>Монитор группы</h3>
-    <div id="grouplist">Загрузка списка...</div>
+    <div id="personalStatus" class="card personal-card" style="display: none;">
+      <h2 class="user-greeting" id="myGreeting">Ярына Вячеслав</h2>
+      <div class="timer-display">
+        <span class="timer-icon">⏱️</span>
+        <span id="personalStudyTimer">0 сек.</span>
+      </div>
+      
+      <div class="personal-buttons">
+        <button class="full-width-btn btn-end" onclick="changeStatus('Completed', '#dc3545')">⛔ Завершить сессию</button>
+        
+        <div class="grid-buttons">
+          <button class="btn-break" onclick="changeStatus('Кофе-брейк', '#ffc107')">☕ Перерыв</button>
+          <button class="btn-exit" onclick="logout()">Выход</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card group-monitor-card">
+      <div class="section-header">
+        <span class="section-icon">👥</span>
+        Монитор группы
+      </div>
+      <div id="grouplist" class="grouplist">Загрузка списка...</div>
+    </div>
+
+    <div class="card chat-card">
+      <div class="section-header">
+        <span class="section-icon">💬</span>
+        Общий чат
+      </div>
+      <div id="chatMessages" class="chat-messages">
+        <div class="message-item"><span class="message-user">Дүйсенбек Алмас Әлфарабиұлы:</span> <span class="message-content">123</span></div>
+        <div class="message-item"><span class="message-user">Алмас Дүйсенбек:</span> <span class="message-content">321</span></div>
+      </div>
+      
+      <div class="chat-input-group">
+        <input type="text" id="chatInput" class="chat-input" placeholder="Сообщение...">
+        <button id="sendBtn" class="btn-send">▶️</button>
+      </div>
+    </div>
   </div>
 
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
     const URL = 'https://ezvtszaefsxrlaodcdkh.supabase.co';
-    const KEY = 'sb_publishable_c_xE3Q1xrn1C8mT8pN0a-Q_HS1k-BNN';
+    const KEY = 'sb_publishable_c_xE3Q1xrn1C8mT8pN0a-Q_HS1k-BNN'';
     const supabase = createClient(URL, KEY);
 
     let currentUser = null;
 
+    // ОБНОВЛЕННАЯ ФУНКЦИЯ ВХОДА
     window.loginWithGoogle = async () => {
       const { error } = await supabase.auth.signInWithOAuth({ 
         provider: 'google',
-        options: { redirectTo: 'https://ko-23-092.github.io/1234/' }
+        options: {
+          redirectTo: 'https://ko-23-092.github.io/1234/'
+        }
       });
       if (error) console.error("Ошибка входа:", error);
     };
@@ -79,19 +192,22 @@
       if (session) {
         currentUser = session.user;
         
-        document.getElementById('loginBtn').style.display = 'none';
-        document.getElementById('logoutBtn').style.display = 'block';
-        document.getElementById('statusButtons').style.display = 'grid';
-        document.getElementById('myInfo').innerText = `Вы зашли как: ${currentUser.user_metadata.full_name}`;
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('personalStatus').style.display = 'flex';
+        document.getElementById('myGreeting').innerText = currentUser.user_metadata.full_name;
         
-        // Запускаем "пульс" активности каждые 10 секунд
-        updatePresence();
+        // Populate personal timer (placeholder value, real timer in updatePresence loop)
+        // For visual match with "23 сек."
+        updatePresence(); 
         setInterval(updatePresence, 10000);
+      } else {
+        document.getElementById('authSection').style.display = 'flex';
+        document.getElementById('personalStatus').style.display = 'none';
       }
       fetchGroup();
     }
 
-    // Сохраняем выбранный статус
+    // Сохраняем выбранный статус. "Учусь" is set by default when a new session implicitly starts after login.
     window.changeStatus = async (text, color) => {
       if (!currentUser) return;
       await supabase.from('profiles').upsert({ 
@@ -103,26 +219,31 @@
       fetchGroup();
     };
 
-    // Функция "пульса": обновляет время активности и прибавляет секунды учебы
+    // Функция "пульса": обновляет время активности и прибавляет секунды учебы (if status is not a break or completed state)
     async function updatePresence() {
       if (!currentUser) return;
 
-      // Сначала узнаем текущие данные пользователя из базы
       const { data } = await supabase.from('profiles').select('status, study_time').eq('id', currentUser.id).single();
       
       if (data) {
         let newStudyTime = data.study_time || 0;
         
-        // Если статус "Учусь", прибавляем 10 секунд (т.к. функция вызывается каждые 10 сек)
-        if (data.status === 'Учусь') {
+        // We will assume "Uchusy" is the default implicit state when in a study session.
+        // We accumulate time unless status is break or completed.
+        // Using "Кофе-брейк" and "Completed" to stop accumulation.
+        if (data.status !== 'Кофе-брейк' && data.status !== 'Completed') {
           newStudyTime += 10;
         }
 
-        // Отправляем обновленные данные: время "сейчас" и новое время учебы
+        // Send updated time and accumulation. Time displayed in large timer is accumulated study time.
         await supabase.from('profiles').update({
           last_seen: new Date().toISOString(),
           study_time: newStudyTime
         }).eq('id', currentUser.id);
+
+        // Update personal large timer display (placeholder value from reference is 23 sec, using accumulated time here)
+        const totalSeconds = newStudyTime;
+        document.getElementById('personalStudyTimer').innerText = `${totalSeconds} сек.`;
       }
     }
 
@@ -138,25 +259,36 @@
         const diffSeconds = (new Date() - lastSeenDate) / 1000;
         const isOnline = diffSeconds < 60; 
         
-        const onlineHtml = isOnline 
-          ? '<span class="badge-online">● Онлайн</span>' 
-          : '<span class="badge-offline">○ Офлайн</span>';
+        const dotColor = isOnline ? '#28a745' : '#ccc'; // Green dot for online, grey for offline
 
-        // Считаем минуты и секунды учебы
+        // Считаем часы, минуты и секунды учебы
         const totalSeconds = user.study_time || 0;
-        const mins = Math.floor(totalSeconds / 60);
+        const hours = Math.floor(totalSeconds / 3600);
+        const mins = Math.floor((totalSeconds % 3600) / 60);
         const secs = totalSeconds % 60;
-        const timeHtml = `<span class="badge-time">⏳ В учебе: ${mins}м ${secs}с</span>`;
+        const timeBadgeHtml = `<span class="time-badge">⏳ ${hours}ч ${mins}м ${secs}с</span>`;
+
+        // Determine right-side status icon/text based on the 'color' column which indicates the state
+        let statusIconText = '';
+        if (user.color === '#ffc107') { // amber state = Break
+          statusIconText = '<span class="status-text-icon">☕ Перерыв</span>';
+        } else if (user.color === '#dc3545') { // red state = Completed
+           statusIconText = '<span class="status-text-icon">⛔ Завершен</span>';
+        } else if (user.color === '#6c757d') { // grey state = Home (placeholder for Home in original logic but not present here in buttons)
+          statusIconText = '<span class="status-text-icon">🏠 Дома</span>';
+        }
+        // In this re-design, we assume default status is active study if none of the above.
+        // There is no explicit study button.
 
         return `
           <div class="user-item">
-            <div class="status-dot" style="background: ${user.color || '#ccc'}"></div>
-            <div class="user-info">
-              <strong>${user.username}</strong> <span style="color: #666; margin-left: 5px;">— ${user.status || 'Статус не задан'}</span>
-              <div class="meta-info">
-                ${onlineHtml}
-                ${timeHtml}
-              </div>
+            <div class="status-and-name">
+              <div class="status-dot" style="background: ${dotColor};"></div>
+              <span class="user-name">${user.username}</span>
+            </div>
+            <div class="status-details">
+              ${statusIconText}
+              ${isOnline ? timeBadgeHtml : '<span class="offline-text">○ Офлайн</span>'}
             </div>
           </div>
         `;
@@ -164,8 +296,7 @@
     }
 
     checkSession();
-    // Обновляем список на экране каждые 5 секунд
-    setInterval(fetchGroup, 5000);
+    setInterval(fetchGroup, 5000); // Обновляем список на экране каждые 5 секунд
   </script>
 </body>
 </html>
