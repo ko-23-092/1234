@@ -9,10 +9,13 @@
     .buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
     button { padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; transition: 0.2s;}
     button:hover { opacity: 0.8; }
+    
     .btn-study { background: #28a745; }
     .btn-coffee { background: #ffc107; color: black; }
     .btn-game { background: #17a2b8; }
     .btn-home { background: #6c757d; }
+    .btn-google { background: #4285F4; margin-bottom: 10px; width: 100%; }
+    .btn-logout { background: #dc3545; margin-bottom: 10px; width: 100%; display: none; }
     
     .user-item { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
     .status-dot { width: 12px; height: 12px; border-radius: 50%; }
@@ -22,8 +25,12 @@
 
   <div class="card">
     <h3>Мой профиль</h3>
-    <p id="myInfo">Загрузка данных...</p>
-    <div class="buttons">
+    <p id="myInfo">Пожалуйста, войдите в аккаунт</p>
+    
+    <button id="loginBtn" class="btn-google" onclick="loginWithGoogle()">🌐 Войти через Google</button>
+    <button id="logoutBtn" class="btn-logout" onclick="logout()">Выйти</button>
+
+    <div class="buttons" id="statusButtons" style="display: none;">
       <button class="btn-study" onclick="changeStatus('Учусь', '#28a745')">📚 Учусь</button>
       <button class="btn-coffee" onclick="changeStatus('Кофе-брейк', '#ffc107')">☕ Кофе</button>
       <button class="btn-game" onclick="changeStatus('В игре', '#17a2b8')">🎮 В игре</button>
@@ -39,37 +46,64 @@
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // Ключи из вашего старого проекта (как на скриншоте)
-    const URL = 'https://ljablscverohxdjafwgf.supabase.co';
-    const KEY = 'sb_publishable_4KEKgjFs9X26qHdZAJtYRw_dsR8Lnhf'; // ВНИМАНИЕ: вставьте сюда ваш полный anon key из старого проекта!
+    const URL = 'https://ezvtszaefsxrlaodcdkh.supabase.co';
+    const KEY = 'СЮДА_ВСТАВИТЬ_ВЕСЬ_КЛЮЧ_ОТ_ko-23-092';
     const supabase = createClient(URL, KEY);
 
-    // Ваш ID в таблице profiles
-    const MY_ID = '70b10d53-92d3-4b2e-b968-28c81aaa72a7';
+    let currentUser = null;
 
-    // Функция обновления статуса
+    window.loginWithGoogle = async () => {
+      const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
+      if (error) console.error("Ошибка входа:", error);
+    };
+
+    window.logout = async () => {
+      await supabase.auth.signOut();
+      location.reload();
+    };
+
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        currentUser = session.user;
+        
+        document.getElementById('loginBtn').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('statusButtons').style.display = 'grid';
+        
+        document.getElementById('myInfo').innerText = `Вы зашли как: ${currentUser.user_metadata.full_name}`;
+      }
+      fetchGroup();
+    }
+
     window.changeStatus = async (text, color) => {
+      if (!currentUser) return;
+
       const { error } = await supabase
         .from('profiles')
-        .update({ status: text, color: color })
-        .eq('id', MY_ID);
+        .upsert({ 
+          id: currentUser.id,
+          username: currentUser.user_metadata.full_name,
+          status: text, 
+          color: color 
+        });
         
       if (error) {
-        alert("Ошибка! Проверьте RLS политики в Supabase.");
+        alert("Ошибка! Проверьте RLS политики в таблице profiles.");
         console.error(error);
       } else {
-        fetchGroup(); // Обновляем список после изменения
+        fetchGroup();
       }
     };
 
-    // Функция загрузки списка
     async function fetchGroup() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .order('username', { ascending: true });
         
-      if (error) return console.error(error);
+      if (error) return console.error("Ошибка загрузки:", error);
 
       const list = document.getElementById('grouplist');
       list.innerHTML = data.map(user => `
@@ -81,17 +115,9 @@
           </div>
         </div>
       `).join('');
-
-      // Ищем себя, чтобы обновить текст "Вы зашли как"
-      const me = data.find(u => u.id === MY_ID);
-      if (me) {
-        document.getElementById('myInfo').innerText = `Вы зашли как: ${me.username}`;
-      }
     }
 
-    // Запускаем первый раз
-    fetchGroup();
-    // Обновляем каждые 5 секунд
+    checkSession();
     setInterval(fetchGroup, 5000);
   </script>
 </body>
