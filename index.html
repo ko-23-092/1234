@@ -2,11 +2,13 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Монитор статусов группы и Чат</title>
+  <title>Монитор статусов и Топ Студентов</title>
   <style>
-    body { font-family: sans-serif; background: #eef2f5; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    body { font-family: sans-serif; background: #eef2f5; display: flex; justify-content: center; padding: 20px; gap: 20px; flex-wrap: wrap; }
     
-    .main-container { display: flex; flex-direction: column; gap: 20px; width: 480px; }
+    .main-column { display: flex; flex-direction: column; gap: 20px; width: 480px; }
+    .side-column { display: flex; flex-direction: column; gap: 20px; width: 350px; } /* Для рейтинга */
+    
     .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.05); }
     
     /* Персональный статус */
@@ -14,10 +16,12 @@
     .user-greeting { font-weight: bold; font-size: 20px; margin-bottom: 20px; }
     .timer-display { display: flex; align-items: center; gap: 10px; font-size: 32px; font-weight: bold; color: #4285F4; margin-bottom: 30px; }
     .timer-icon { font-size: 40px; color: #555; }
+    
+    /* Достижения пользователя */
+    .my-badges { display: flex; gap: 10px; margin-bottom: 20px; min-height: 30px; justify-content: center; flex-wrap: wrap; }
+    .badge-item { background: #fff3cd; color: #856404; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; border: 1px solid #ffeeba; }
 
     .personal-buttons { display: flex; flex-direction: column; width: 100%; }
-    
-    /* Новые стили кнопок статусов */
     .btn-logout { background: #dc3545; color: white; width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 15px; font-size: 16px; transition: 0.2s; }
     .btn-logout:hover { background: #c82333; }
     
@@ -35,20 +39,30 @@
 
     .btn-login-google { background: #4285F4; padding: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; width: 100%; font-size: 16px; margin-top: 20px; }
 
-    /* Монитор группы */
+    /* Общие стили заголовков карточек */
     .section-header { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: bold; color: #333; margin-bottom: 20px; justify-content: center; }
     .section-icon { font-size: 24px; color: #555; }
     
+    /* Монитор группы */
     .grouplist { display: flex; flex-direction: column; gap: 15px; }
     .user-item { display: flex; align-items: center; padding: 10px; background: #fafafa; border-radius: 8px; justify-content: space-between; }
-    .status-and-name { display: flex; align-items: center; gap: 12px; }
+    .status-and-name { display: flex; flex-direction: column; gap: 5px; }
+    .name-row { display: flex; align-items: center; gap: 8px; }
     .status-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
     .user-name { font-weight: bold; font-size: 16px; }
+    .user-badges { font-size: 12px; }
     
     .status-details { display: flex; flex-direction: column; align-items: flex-end; text-align: right; }
     .status-text-icon { display: flex; align-items: center; gap: 5px; color: #666; font-size: 14px; }
     .time-badge { color: #4285F4; font-size: 12px; display: flex; align-items: center; gap: 3px; margin-top: 3px; }
     .offline-text { color: #999; font-size: 12px; margin-top: 3px; }
+
+    /* Топ студентов (Рейтинг) */
+    .top-list { display: flex; flex-direction: column; gap: 10px; }
+    .top-item { display: flex; align-items: center; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 8px; gap: 15px; }
+    .top-rank { font-size: 20px; font-weight: bold; color: #ffc107; width: 25px; text-align: center; }
+    .top-info { flex-grow: 1; }
+    .top-time { font-weight: bold; color: #28a745; }
 
     /* Чат */
     .chat-card { display: flex; flex-direction: column; flex-grow: 1; padding: 25px; }
@@ -68,7 +82,7 @@
 </head>
 <body>
 
-  <div class="main-container">
+  <div class="main-column">
     <div id="authSection" class="card personal-card" style="display: none;">
       <h2 class="user-greeting">Пожалуйста, войдите в аккаунт</h2>
       <button class="btn-login-google" onclick="loginWithGoogle()">🌐 Войти через Google</button>
@@ -76,6 +90,9 @@
 
     <div id="personalStatus" class="card personal-card" style="display: none;">
       <h2 class="user-greeting" id="myGreeting">Имя Пользователя</h2>
+      
+      <div id="myBadges" class="my-badges"></div>
+
       <div class="timer-display">
         <span class="timer-icon">⏱️</span>
         <span id="personalStudyTimer">0 сек.</span>
@@ -114,6 +131,16 @@
     </div>
   </div>
 
+  <div class="side-column">
+    <div class="card">
+      <div class="section-header">
+        <span class="section-icon">🏆</span>
+        Топ студентов
+      </div>
+      <div id="topList" class="top-list">Загрузка рейтинга...</div>
+    </div>
+  </div>
+
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
@@ -122,6 +149,17 @@
     const supabase = createClient(URL, KEY);
 
     let currentUser = null;
+    let sessionStudyTime = 0; // Время учебы "за раз" (в текущей сессии без перерыва)
+
+    // Форматирование времени (секунды в часы, минуты, секунды)
+    function formatTime(totalSeconds) {
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      if (h > 0) return `${h}ч ${m}м ${s}с`;
+      if (m > 0) return `${m}м ${s}с`;
+      return `${s} сек`;
+    }
 
     window.loginWithGoogle = async () => {
       const { error } = await supabase.auth.signInWithOAuth({ 
@@ -145,8 +183,9 @@
         document.getElementById('personalStatus').style.display = 'flex';
         document.getElementById('myGreeting').innerText = "Вы зашли как: " + currentUser.user_metadata.full_name;
         
+        await fetchMyBadges(); // Грузим личные значки
         updatePresence(); 
-        setInterval(updatePresence, 10000);
+        setInterval(updatePresence, 10000); // каждые 10 сек обновляем статус и время
         setupChatChannel();
       } else {
         document.getElementById('authSection').style.display = 'flex';
@@ -157,6 +196,12 @@
 
     window.changeStatus = async (text, color) => {
       if (!currentUser) return;
+      
+      // Если ушли пить кофе или домой - сбрасываем время учебы "за раз"
+      if (text !== 'Учусь') {
+        sessionStudyTime = 0; 
+      }
+
       await supabase.from('profiles').upsert({ 
         id: currentUser.id,
         username: currentUser.user_metadata.full_name,
@@ -166,24 +211,80 @@
       fetchGroup();
     };
 
+    // Обновляем время и проверяем ачивки
     async function updatePresence() {
       if (!currentUser) return;
-      const { data } = await supabase.from('profiles').select('status, study_time').eq('id', currentUser.id).single();
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', currentUser.id).single();
       
-      if (data) {
-        let newStudyTime = data.study_time || 0;
+      if (profile) {
+        let newStudyTime = profile.study_time || 0;
+        let badges = profile.badges || [];
+        let newBadgesAdded = false;
         
         // Время учебы прибавляется только если статус "Учусь" или статуса еще нет
-        if (data.status === 'Учусь' || !data.status) {
+        if (profile.status === 'Учусь' || !profile.status) {
           newStudyTime += 10;
+          sessionStudyTime += 10; // капает время "за раз"
         }
 
+        // --- ЛОГИКА АЧИВОК ---
+        
+        // 1. Ранняя пташка: сейчас от 4:00 до 8:00
+        const hour = new Date().getHours();
+        if (hour >= 4 && hour < 8 && !badges.includes('🌅 Ранняя пташка')) {
+          badges.push('🌅 Ранняя пташка');
+          newBadgesAdded = true;
+          alert('Поздравляем! Вы получили достижение "🌅 Ранняя пташка" за ранний вход!');
+        }
+
+        // 2. Марафонец: более 2 часов (7200 сек) за одну сессию без перерыва
+        if (sessionStudyTime >= 7200 && !badges.includes('🏃 Марафонец')) {
+          badges.push('🏃 Марафонец');
+          newBadgesAdded = true;
+          alert('Мощно! Вы получили достижение "🏃 Марафонец" (Учеба 2+ часа за раз)!');
+        }
+
+        // Сохраняем обновленные данные
         await supabase.from('profiles').update({
           last_seen: new Date().toISOString(),
-          study_time: newStudyTime
+          study_time: newStudyTime,
+          ...(newBadgesAdded && { badges: badges }) // обновляем значки только если есть новые
         }).eq('id', currentUser.id);
 
-        document.getElementById('personalStudyTimer').innerText = newStudyTime + " сек.";
+        if (newBadgesAdded) await fetchMyBadges(); // обновляем визуал значков
+        
+        document.getElementById('personalStudyTimer').innerText = formatTime(newStudyTime);
+      }
+    }
+
+    // Проверка ачивки чата (вызывается при отправке сообщения)
+    async function checkChatAchievements() {
+      if (!currentUser) return;
+      const { data: profile } = await supabase.from('profiles').select('badges').eq('id', currentUser.id).single();
+      if (!profile) return;
+      
+      let badges = profile.badges || [];
+      if (badges.includes('💬 Активист')) return; // Уже есть
+
+      // Считаем сообщения
+      const { count } = await supabase.from('chat_messages').select('*', { count: 'exact', head: true }).eq('user_id', currentUser.id);
+      
+      if (count >= 20) {
+        badges.push('💬 Активист');
+        await supabase.from('profiles').update({ badges: badges }).eq('id', currentUser.id);
+        alert('Общительный! Вы получили достижение "💬 Активист" (20 сообщений)!');
+        fetchMyBadges();
+      }
+    }
+
+    async function fetchMyBadges() {
+      if (!currentUser) return;
+      const { data } = await supabase.from('profiles').select('badges').eq('id', currentUser.id).single();
+      const container = document.getElementById('myBadges');
+      if (data && data.badges && data.badges.length > 0) {
+        container.innerHTML = data.badges.map(b => `<span class="badge-item">${b}</span>`).join('');
+      } else {
+        container.innerHTML = '';
       }
     }
 
@@ -197,37 +298,72 @@
         return;
       }
 
-      let html = '';
+      let groupHtml = '';
       data.forEach(user => {
         const lastSeenDate = new Date(user.last_seen || 0);
         const isOnline = ((new Date() - lastSeenDate) / 1000) < 60; 
         const dotColor = isOnline ? '#28a745' : '#ccc';
-
         const totalSeconds = user.study_time || 0;
-        const hours = Math.floor(totalSeconds / 3600);
-        const mins = Math.floor((totalSeconds % 3600) / 60);
-        const secs = totalSeconds % 60;
-        const timeBadgeHtml = '<span class="time-badge">⏳ ' + hours + 'ч ' + mins + 'м ' + secs + 'с</span>';
+        const timeBadgeHtml = `<span class="time-badge">⏳ ${formatTime(totalSeconds)}</span>`;
 
-        // Иконки под твои новые статусы
         let statusIconText = '<span class="status-text-icon">📚 Учусь</span>';
         if (user.status === 'Кофе') statusIconText = '<span class="status-text-icon">☕ Кофе</span>';
         else if (user.status === 'В игре') statusIconText = '<span class="status-text-icon">🎮 В игре</span>';
         else if (user.status === 'Дома') statusIconText = '<span class="status-text-icon">🏠 Дома</span>';
 
         const onlineStatus = isOnline ? timeBadgeHtml : '<span class="offline-text">○ Офлайн</span>';
+        
+        // Вывод значков под именем
+        let userBadgesHtml = '';
+        if (user.badges && user.badges.length > 0) {
+          userBadgesHtml = `<div class="user-badges">${user.badges.join(' ')}</div>`;
+        }
 
-        html += '<div class="user-item">' +
-                  '<div class="status-and-name">' +
-                    '<div class="status-dot" style="background: ' + dotColor + ';"></div>' +
-                    '<span class="user-name">' + user.username + '</span>' +
-                  '</div>' +
-                  '<div class="status-details">' +
-                    statusIconText + onlineStatus +
-                  '</div>' +
-                '</div>';
+        groupHtml += `
+          <div class="user-item">
+            <div class="status-and-name">
+              <div class="name-row">
+                <div class="status-dot" style="background: ${dotColor};"></div>
+                <span class="user-name">${user.username}</span>
+              </div>
+              ${userBadgesHtml}
+            </div>
+            <div class="status-details">
+              ${statusIconText} ${onlineStatus}
+            </div>
+          </div>`;
       });
-      list.innerHTML = html;
+      list.innerHTML = groupHtml;
+
+      // --- РЕНДЕР ТОП СТУДЕНТОВ (Рейтинг) ---
+      renderLeaderboard(data);
+    }
+
+    function renderLeaderboard(allUsers) {
+      // Сортируем пользователей по study_time (по убыванию)
+      const sortedUsers = [...allUsers].sort((a, b) => (b.study_time || 0) - (a.study_time || 0));
+      const topContainer = document.getElementById('topList');
+      
+      let html = '';
+      // Берем топ-5 (или всех, если их меньше 5)
+      sortedUsers.slice(0, 5).forEach((user, index) => {
+        let rankMedal = `${index + 1}`;
+        if (index === 0) rankMedal = '🥇';
+        if (index === 1) rankMedal = '🥈';
+        if (index === 2) rankMedal = '🥉';
+
+        html += `
+          <div class="top-item">
+            <div class="top-rank">${rankMedal}</div>
+            <div class="top-info">
+              <div style="font-weight:bold;">${user.username}</div>
+              <div style="font-size: 12px; color: #666;">${(user.badges || []).length} достижений</div>
+            </div>
+            <div class="top-time">${formatTime(user.study_time || 0)}</div>
+          </div>
+        `;
+      });
+      topContainer.innerHTML = html;
     }
 
     /* --- ЛОГИКА ЧАТА --- */
@@ -252,8 +388,13 @@
         message: messageText
       });
       
-      if (error) console.error("Ошибка отправки:", error);
-      else input.value = ''; 
+      if (error) {
+        console.error("Ошибка отправки:", error);
+      } else {
+        input.value = ''; 
+        // Проверяем ачивку за количество сообщений
+        checkChatAchievements();
+      }
     };
     
     async function loadMessages() {
@@ -271,11 +412,12 @@
       const isOwnMessage = msg.user_id === currentUser.id;
       const messageClass = isOwnMessage ? 'message-item own-message' : 'message-item';
       
-      const msgHtml = '<div class="' + messageClass + '">' +
-                        '<span class="message-user">' + msg.username + '</span>' +
-                        '<p class="message-content">' + msg.message + '</p>' +
-                      '</div>';
-      
+      const msgHtml = `
+        <div class="${messageClass}">
+          <span class="message-user">${msg.username}</span>
+          <p class="message-content">${msg.message}</p>
+        </div>
+      `;
       chatContainer.insertAdjacentHTML('beforeend', msgHtml);
       if (scroll) scrollToBottom();
     }
