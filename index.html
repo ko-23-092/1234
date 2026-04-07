@@ -432,10 +432,17 @@
     };
     
     async function loadMessages() {
-      const { data, error } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: true }).limit(50);
+      // ascending: false означает сортировку от новых к старым
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
       if (data) {
-        document.getElementById('chatMessages').innerHTML = ''; // Очистка перед загрузкой
-        data.forEach(msg => renderNewMessage(msg, false));
+        document.getElementById('chatMessages').innerHTML = ''; 
+        // Переворачиваем массив (чтобы последнее было в самом низу)
+        data.reverse().forEach(msg => renderNewMessage(msg, false));
         scrollToBottom();
       }
     }
