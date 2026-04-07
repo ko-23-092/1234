@@ -401,13 +401,18 @@
       
       if (!messageText || !currentUser) return;
       
+      // Отправляем запрос в базу
       const { error } = await supabase.from('chat_messages').insert({
         user_id: currentUser.id,
         username: currentUser.user_metadata.full_name,
         message: messageText
       });
       
-      if (!error) {
+      // ЕСЛИ ЕСТЬ ОШИБКА - ВЫВОДИМ ЕЁ НА ЭКРАН!
+      if (error) {
+        console.error("ОШИБКА ОТПРАВКИ:", error);
+        alert("Supabase ругается: " + error.message);
+      } else {
         input.value = ''; 
         checkChatAchievements();
       }
